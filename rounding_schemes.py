@@ -4,6 +4,9 @@ import numpy as np
 
 random.seed(42)
 
+q = 0.95
+# q = 1
+
 class EdgeRoundingScheme:
     def __init__(self, graph):
         self.graph = graph
@@ -173,13 +176,14 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
             random_vector = np.random.rand(self.num_sim_instances)
 
             free_instances = self.get_free_instances(u, v)
-            unmatched_probability = max(self.prob_u_v_unmatched(u, v, free_instances), 1e-6) # Avoid division by zero
             weight = self.graph.get_edge_weight(u, v)
 
             # print(f"Edge ({u}, {v}): weight {weight}, unmatched probability {unmatched_probability}, weight vector: {self.weight_vector}")
             
-            target_matching_probability = weight * self.c / unmatched_probability
-            proposal_matching_probability = self.average_edge_weight * self.c / unmatched_probability
+            target_matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=False), 1e-6)
+            proposal_matching_probability = self.average_edge_weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=True), 1e-6)
+
+            proposal_matching_probability = q * target_matching_probability + (1 - q) * proposal_matching_probability
 
             self.update_weight_vector(random_vector, target_matching_probability, proposal_matching_probability)
 
@@ -188,16 +192,15 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
                 print(f"Warning: Matching probability {proposal_matching_probability} exceeds 1 for edge ({u}, {v}). Capping it at 1.")
                 proposal_matching_probability = 1
 
-            # print(self.matching_matrix)
-
             match_decisions = free_instances["both"] & (random_vector < proposal_matching_probability)
             self.matching_matrix[:, u] = self.matching_matrix[:, u] | match_decisions
             self.matching_matrix[:, v] = self.matching_matrix[:, v] | match_decisions
 
             if not self.matching.is_matched(u) and not self.matching.is_matched(v):
                 weight = self.graph.get_edge_weight(u, v)
-                target_matching_probability = weight * self.c / unmatched_probability
-                proposal_matching_probability = self.average_edge_weight * self.c / unmatched_probability
+                target_matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=False), 1e-6)
+                proposal_matching_probability = self.average_edge_weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=True), 1e-6)
+                proposal_matching_probability = q * target_matching_probability + (1 - q) * proposal_matching_probability
 
                 if random.random() < proposal_matching_probability:
                     self.matching.match(u, v)
@@ -230,7 +233,7 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
 
         return free_instances
 
-    def prob_u_v_unmatched(self, u, v, free_instances=None):
+    def prob_u_v_unmatched(self, u, v, free_instances=None, proposal=False):
         if self.graph.get_current_edge() in self.estimated_unmatched_probabilities:
             return self.estimated_unmatched_probabilities[self.graph.get_current_edge()]
         else:
@@ -240,15 +243,14 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
             # print(free_instances)
 
             uv_unmatched_count = np.sum(free_instances["both"])
-            # print(f"Calculating unmatched probability for edge ({u}, {v}): {uv_unmatched_count} out of {self.num_sim_instances} instances are free. Weight vector: {self.weight_vector}")
 
-            unmatched_probability = np.dot(free_instances["both"], self.weight_vector) / np.sum(self.weight_vector)
-
-            self.estimated_unmatched_probabilities[self.graph.get_current_edge()] = unmatched_probability
-
-            # print(f"Unmatched probability for edge ({u}, {v}): {unmatched_probability}, weight vector: {self.weight_vector}")
-            # print(f"Estimated unmatched probabilities: {self.estimated_unmatched_probabilities}")
-            return self.estimated_unmatched_probabilities[self.graph.get_current_edge()]
+            if proposal:
+                proposal_unmatched_probability = uv_unmatched_count / self.num_sim_instances
+                return proposal_unmatched_probability
+            else:
+                unmatched_probability = np.dot(free_instances["both"], self.weight_vector) / self.num_sim_instances #np.sum(self.weight_vector)
+                self.estimated_unmatched_probabilities[self.graph.get_current_edge()] = unmatched_probability
+                return self.estimated_unmatched_probabilities[self.graph.get_current_edge()]
     
     def execute(self):
         while len(self.graph.revealed_edges) < len(self.graph.edge_arrival_order) and len(self.matching.get_matched_edges()) < len(self.graph.graph.edges()):

@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     # Example with a star graph with uniform fractional matching, |V|=20
     fractional_matching = { (0, i): 0.005 for i in range(1, 21) }
-    fractional_matching[0,10] = 0.905
+    fractional_matching[0,17] = 0.91
     edge_arrival_order = [(0, i) for i in range(1, 21)]
 
     # # Complete graph with uniform fractional matching, |V|=6
@@ -168,12 +168,12 @@ if __name__ == "__main__":
     # fractional_matching = { (i, j): 1/19 for i in range(20) for j in range(i+1, 20) }
     # edge_arrival_order = [(i, j) for i in range(20) for j in range(i+1, 20)]
 
-    # # Bipartite graph with uniform fractional matching, |V|=10 on each side
-    # fractional_matching = { (i, j): 1/10 for i in range(10) for j in range(10, 20) }
+    # Bipartite graph with uniform fractional matching, |V|=10 on each side
+    fractional_matching = { (i, j): 1/10 for i in range(10) for j in range(10, 20) }
 
-    # # shuffle edge arrival order
-    # edge_arrival_order = [(i, j) for i in range(10) for j in range(10, 20)]
-
+    # shuffle edge arrival order
+    edge_arrival_order = [(i, j) for i in range(10) for j in range(10, 20)]
+    random.shuffle(edge_arrival_order)
 
     # # Bipartite graph with uniform fractional matching, |V|=15 on each side
     # fractional_matching = { (i, j): 1/10 for i in range(10) for j in range(10, 20) }
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     # edge_arrival_order = [(i, j) for i in range(10) for j in range(10, 20)]
     # random.shuffle(edge_arrival_order)
 
-    c_guarantee = 1/2
+    c_guarantee = 2/3
     experiment_name = "is_star_20"
 
     json_file_name = f"raw_results/{experiment_name}.json"
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     #         f.write(f'"{edge}",')
     #     f.write("\n")
 
-    scaled_probabilities = evaluator.experiment(parallel=False)
+    scaled_probabilities = evaluator.experiment(parallel=True)
 
     print(scaled_probabilities)
     serializable_data = {str(k): v for k, v in scaled_probabilities.items()}
