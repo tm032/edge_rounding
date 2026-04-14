@@ -4,7 +4,8 @@ import copy
 
 import networkx 
 import matplotlib.pyplot as plt
-from scipy.stats import beta
+from scipy.stats import uniform
+import numpy as np
 
 GRAPH_INSTANCE_DIR = "graph_instances/"
 
@@ -32,17 +33,20 @@ class Graph:
         self.revealed_edges = []   
 
     def set_uniform_edge_weights(self, weight):
-        print(f"Setting uniform edge weights: {weight}, for edges: {self.graph}")
         for u, v in self.graph.edges():
             self.graph[u][v]['weight'] = weight
 
-    def set_unbalanced_edge_weights(self, a, b, seed=None):
+    def set_unbalanced_edge_weights(self, lb, ub, seed=None):
         self.set_uniform_edge_weights(weight=0) # Initialize all edge weights to 0
-        for u, v in self.graph.edges():
+        
+        edge_list = list(self.graph.edges())
+        np.random.seed(seed + 42)
+        np.random.shuffle(edge_list)  # Shuffle edges to ensure randomness in weight assignment
+
+        for u, v in edge_list:
             remaining_capacity_u = max(1 - self.get_incident_edge_weights_sum(u, revealed_only=False), 0)
             remaining_capacity_v = max(1 - self.get_incident_edge_weights_sum(v, revealed_only=False), 0)
-            print(self.get_incident_edge_weights_sum(u, revealed_only=False), self.get_incident_edge_weights_sum(v, revealed_only=False))
-            edge_weight = max(beta.rvs(a, b, random_state=seed), 0.1) * min(remaining_capacity_u, remaining_capacity_v)
+            edge_weight = uniform.rvs(lb, ub-lb, random_state=seed) * min(remaining_capacity_u, remaining_capacity_v)
             
             if edge_weight < 1e-6:
                 edge_weight = 0
@@ -64,11 +68,11 @@ class Graph:
             json.dump({
                 "fractional_matching": {str(edge): self.graph[edge[0]][edge[1]]['weight'] for edge in self.graph.edges()},
                 "edge_arrival_order": [str(edge) for edge in self.edge_arrival_order]
-            }, f, indent=4)        
+            }, f, indent=4)
+
+        print(f"Graph exported to {GRAPH_INSTANCE_DIR + file_name}")        
 
     def draw(self):
-        print(f"edges: {self.graph.edges(data=True)}")
-        print(f"(0,1) in E? {self.graph.has_edge(0, 1)}")
         networkx.draw(self.graph, with_labels=True)
         plt.show()
     
@@ -140,7 +144,6 @@ Matching graph that maintains the integral matching by setting matched edge weig
 """
 class Matching(Graph):
     def __init__(self, graph_instance):
-        print(f" Matching graph with instance: {graph_instance.graph.copy()}")
         super().__init__([], graph_instance=graph_instance, edge_arrival_order=graph_instance.edge_arrival_order)
         self.set_uniform_edge_weights(0) # Initialize all edges with weight 0
         self.matched_edges = set()
