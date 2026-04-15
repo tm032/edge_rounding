@@ -72,7 +72,7 @@ def generate_tree_graphs(seed):
 
 
 if __name__ == "__main__":
-    # generate_star_graphs(seed=1)
-    # generate_complete_graphs(seed=103)
-    # generate_bipartite_graphs(seed=42)
+    generate_star_graphs(seed=1)
+    generate_complete_graphs(seed=103)
+    generate_bipartite_graphs(seed=42)
     generate_tree_graphs(seed=54)

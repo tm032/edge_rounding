@@ -38,15 +38,16 @@ class Graph:
 
     def set_unbalanced_edge_weights(self, lb, ub, seed=None):
         self.set_uniform_edge_weights(weight=0) # Initialize all edge weights to 0
-        
+
         edge_list = list(self.graph.edges())
         np.random.seed(seed + 42)
         np.random.shuffle(edge_list)  # Shuffle edges to ensure randomness in weight assignment
+        
 
         for u, v in edge_list:
             remaining_capacity_u = max(1 - self.get_incident_edge_weights_sum(u, revealed_only=False), 0)
             remaining_capacity_v = max(1 - self.get_incident_edge_weights_sum(v, revealed_only=False), 0)
-            edge_weight = uniform.rvs(lb, ub-lb, random_state=seed) * min(remaining_capacity_u, remaining_capacity_v)
+            edge_weight = uniform.rvs(lb, ub-lb) * min(remaining_capacity_u, remaining_capacity_v)
             
             if edge_weight < 1e-6:
                 edge_weight = 0

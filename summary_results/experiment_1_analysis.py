@@ -6,6 +6,7 @@ import json
 RAW_RESULTS_DIR = "raw_results/"
 UNMATCHED_PROBABILITIES_DIR = "estimated_unmatched_probabilities/"
 SUMMARY_RESULTS_DIR = "summary_results/"
+FIGURES_DIR = "figures/"
 
 c = [0.5, 0.6, 2/3, 0.7, 3/4, 0.8, 0.9, 1.0]
 
@@ -83,6 +84,7 @@ def plot_results():
         ax.grid(True)
 
     plt.tight_layout()
+    plt.savefig(f"{FIGURES_DIR}/experiment_1_results.png")
     plt.show()
 
 

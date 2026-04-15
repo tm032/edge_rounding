@@ -56,6 +56,25 @@ class RecursiveRoundingScheme(EdgeRoundingScheme):
         super().__init__(graph)
         self.c = c
 
+        self.num_matching_probability_capped = 0
+        self.num_matching_probability_exceeds_one = 0
+        self.num_proposal_matching_probability_exceeds_one = 0
+
+    def calculate_matching_probability(self, weight, unmatched_probability, proposal=False):
+        if unmatched_probability < 1e-6:
+            self.num_matching_probability_capped += 1
+
+        matching_probability = weight * self.c / max(unmatched_probability, 1e-6) # Avoid division by zero
+
+        if matching_probability > 1:
+            if proposal:
+                self.num_proposal_matching_probability_exceeds_one += 1
+            else:
+                self.num_matching_probability_exceeds_one += 1
+            matching_probability = 1
+
+        return matching_probability
+
     def prob_u_v_unmatched(self, u, v):
         raise NotImplementedError("This method should be implemented by subclasses.")
         
@@ -65,7 +84,7 @@ class RecursiveRoundingScheme(EdgeRoundingScheme):
             u, v = edge
             if not self.matching.is_matched(u) and not self.matching.is_matched(v):
                 weight = self.graph.get_edge_weight(u, v)
-                matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v), 1e-6) # Avoid division by zero
+                matching_probability = self.calculate_matching_probability(weight, self.prob_u_v_unmatched(u, v))
 
                 if self.rng.random() < matching_probability:
                     self.matching.match(u, v)
@@ -96,9 +115,9 @@ class SimpleRecursiveRoundingScheme(RecursiveRoundingScheme):
             u, v = edge
             if not self.matching.is_matched(u) and not self.matching.is_matched(v):
                 weight = self.graph.get_edge_weight(u, v)
-                target_matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v), 1e-6)
+                target_matching_probability = self.calculate_matching_probability(weight, self.prob_u_v_unmatched(u, v))
 
-                proposal_matching_probability = self.average_edge_weight * self.c / max(self.prob_u_v_unmatched(u, v), 1e-6) # Avoid division by zero
+                proposal_matching_probability = self.calculate_matching_probability(self.average_edge_weight, self.prob_u_v_unmatched(u, v), proposal=True)
                 proposal_matching_probability = self.r * target_matching_probability + (1 - self.r) * proposal_matching_probability
 
                 if self.rng.random() < proposal_matching_probability:
@@ -113,7 +132,10 @@ class SimpleRecursiveRoundingScheme(RecursiveRoundingScheme):
 
         result = {
             "matched_edges": self.matching.get_matched_edges(),
-            "simulation_weight": self.simulation_weight
+            "simulation_weight": self.simulation_weight,
+            "num_matching_probability_capped": self.num_matching_probability_capped,
+            "num_matching_probability_exceeds_one": self.num_matching_probability_exceeds_one,
+            "num_proposal_matching_probability_exceeds_one": self.num_proposal_matching_probability_exceeds_one
         }
 
         return result
@@ -142,11 +164,11 @@ class SimulatedRecursiveRoundingScheme(RecursiveRoundingScheme):
             random_vector = self.rng.random(self.num_sim_instances)
 
             free_instances = self.get_free_instances(u, v)
-            unmatched_probability = max(self.prob_u_v_unmatched(u, v, free_instances), 1e-10) # Avoid division by zero
+            unmatched_probability = self.prob_u_v_unmatched(u, v, free_instances) # Avoid division by zero
             weight = self.graph.get_edge_weight(u, v)
 
-            matching_probability = weight * self.c / unmatched_probability
-
+            matching_probability = self.calculate_matching_probability(weight, unmatched_probability)
+            
             self.max_matching_probability = max(self.max_matching_probability, matching_probability)
             if matching_probability > 1:
                 print(f"Warning: Matching probability {matching_probability} exceeds 1 for edge ({u}, {v}). Capping it at 1.")
@@ -158,8 +180,8 @@ class SimulatedRecursiveRoundingScheme(RecursiveRoundingScheme):
 
             if not self.matching.is_matched(u) and not self.matching.is_matched(v):
                 weight = self.graph.get_edge_weight(u, v)
-                target_matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances), 1e-10)
-                proposal_matching_probability = self.average_edge_weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances), 1e-10)
+                target_matching_probability = self.calculate_matching_probability(weight, self.prob_u_v_unmatched(u, v, free_instances))
+                proposal_matching_probability = self.calculate_matching_probability(self.average_edge_weight, self.prob_u_v_unmatched(u, v, free_instances), proposal=True)
                 proposal_matching_probability = self.r * target_matching_probability + (1 - self.r) * proposal_matching_probability
 
                 if self.rng.random() < proposal_matching_probability:
@@ -205,7 +227,10 @@ class SimulatedRecursiveRoundingScheme(RecursiveRoundingScheme):
         result = {
             "matched_edges": self.matching.get_matched_edges(),
             "estimated_unmatched_probabilities": self.estimated_unmatched_probabilities,
-            "simulation_weight": self.simulation_weight
+            "simulation_weight": self.simulation_weight,
+            "num_matching_probability_capped": self.num_matching_probability_capped,
+            "num_matching_probability_exceeds_one": self.num_matching_probability_exceeds_one,
+            "num_proposal_matching_probability_exceeds_one": self.num_proposal_matching_probability_exceeds_one
         }
 
         return result
@@ -235,13 +260,11 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
 
             # print(f"Edge ({u}, {v}): weight {weight}, unmatched probability {unmatched_probability}, weight vector: {self.weight_vector}")
             
-            target_matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=False), 1e-10)
-            proposal_matching_probability = self.average_edge_weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=True), 1e-10)
-
+            target_matching_probability = self.calculate_matching_probability(weight, self.prob_u_v_unmatched(u, v, free_instances))
+            proposal_matching_probability = self.calculate_matching_probability(self.average_edge_weight, self.prob_u_v_unmatched(u, v, free_instances), proposal=True)
             proposal_matching_probability = self.r * target_matching_probability + (1 - self.r) * proposal_matching_probability
 
             self.update_weight_vector(random_vector, target_matching_probability, proposal_matching_probability)
-
 
             self.max_matching_probability = max(self.max_matching_probability, proposal_matching_probability)
             if proposal_matching_probability > 1:
@@ -254,8 +277,8 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
 
             if not self.matching.is_matched(u) and not self.matching.is_matched(v):
                 weight = self.graph.get_edge_weight(u, v)
-                target_matching_probability = weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=False), 1e-10)
-                proposal_matching_probability = self.average_edge_weight * self.c / max(self.prob_u_v_unmatched(u, v, free_instances, proposal=True), 1e-10)
+                target_matching_probability = self.calculate_matching_probability(weight, self.prob_u_v_unmatched(u, v, free_instances))
+                proposal_matching_probability = self.calculate_matching_probability(self.average_edge_weight, self.prob_u_v_unmatched(u, v, free_instances), proposal=True)
                 proposal_matching_probability = self.r * target_matching_probability + (1 - self.r) * proposal_matching_probability
 
                 if self.rng.random() < proposal_matching_probability:
@@ -265,12 +288,15 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
                     self.simulation_weight *= (1 - target_matching_probability) / (1 - proposal_matching_probability)
     
     def update_weight_vector(self, random_vector, target_matching_probability, proposal_matching_probability):
-        acceptance_weight = target_matching_probability / proposal_matching_probability
-        rejection_weight = (1 - target_matching_probability) / (1 - proposal_matching_probability)
+        accepted_indices = random_vector < proposal_matching_probability
 
-        accepted_indices = random_vector < target_matching_probability
-        self.weight_vector[accepted_indices] *= acceptance_weight
-        self.weight_vector[~accepted_indices] *= rejection_weight
+        if proposal_matching_probability < 1:
+            rejection_weight = (1 - target_matching_probability) / (1 - proposal_matching_probability)
+            self.weight_vector[~accepted_indices] *= rejection_weight
+        
+        if proposal_matching_probability > 0:
+            acceptance_weight = target_matching_probability / proposal_matching_probability
+            self.weight_vector[accepted_indices] *= acceptance_weight
 
     def get_free_instances(self, u, v):
         # Take column vector for u and v from the matching_matrix
@@ -287,22 +313,16 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
 
         return free_instances
 
-    def prob_u_v_unmatched(self, u, v, free_instances=None, proposal=False):
+    def prob_u_v_unmatched(self, u, v, free_instances=None):
         if self.graph.get_current_edge() in self.estimated_unmatched_probabilities:
             return self.estimated_unmatched_probabilities[self.graph.get_current_edge()]
         else:
             if free_instances is None:
                 free_instances = self.get_free_instances(u, v)
 
-            uv_unmatched_count = np.sum(free_instances["both"])
-
-            if proposal:
-                proposal_unmatched_probability = uv_unmatched_count / self.num_sim_instances
-                return proposal_unmatched_probability
-            else:
-                unmatched_probability = np.dot(free_instances["both"], self.weight_vector) / self.num_sim_instances #np.sum(self.weight_vector)
-                self.estimated_unmatched_probabilities[self.graph.get_current_edge()] = unmatched_probability
-                return self.estimated_unmatched_probabilities[self.graph.get_current_edge()]
+            unmatched_probability = np.dot(free_instances["both"], self.weight_vector) / self.num_sim_instances 
+            self.estimated_unmatched_probabilities[self.graph.get_current_edge()] = unmatched_probability
+            return self.estimated_unmatched_probabilities[self.graph.get_current_edge()]
     
     def _execute(self):
         while len(self.graph.revealed_edges) < len(self.graph.edge_arrival_order) and len(self.matching.get_matched_edges()) < len(self.graph.graph.edges()):
@@ -311,7 +331,10 @@ class SimulatedRecursiveRoundingSchemeWithIS(SimulatedRecursiveRoundingScheme):
         result = {
             "matched_edges": self.matching.get_matched_edges(),
             "estimated_unmatched_probabilities": self.estimated_unmatched_probabilities,
-            "simulation_weight": self.simulation_weight
+            "simulation_weight": self.simulation_weight,
+            "num_matching_probability_capped": self.num_matching_probability_capped,
+            "num_matching_probability_exceeds_one": self.num_matching_probability_exceeds_one,
+            "num_proposal_matching_probability_exceeds_one": self.num_proposal_matching_probability_exceeds_one
         }
 
         return result

@@ -34,6 +34,10 @@ class Evaluator:
         child_seeds = seed_sequence.spawn(self.num_rounds)
         rngs = [default_rng(s) for s in child_seeds]
 
+        num_matching_probability_capped = 0
+        num_matching_probability_exceeds_one = 0
+        num_proposal_matching_probability_exceeds_one = 0
+        
         if parallel:
             rounding_scheme_instances = [copy.deepcopy(self.rounding_scheme) for _ in range(self.num_rounds)]
             with mp.Pool(processes=mp.cpu_count()//2) as pool:
@@ -79,9 +83,15 @@ class Evaluator:
                 else:
                     print(f"Warning: Matched edge {edge} not found in matched_count dictionary.")
 
-        matching_counts = {edge: count for edge, count in self.matched_count.items()}
+            num_matching_probability_capped += result.get("num_matching_probability_capped", 0)
+            num_matching_probability_exceeds_one += result.get("num_matching_probability_exceeds_one", 0)
+            num_proposal_matching_probability_exceeds_one += result.get("num_proposal_matching_probability_exceeds_one", 0)
 
-        matching_probabilities = {edge: count / self.num_rounds for edge, count in self.matched_count.items()}
+        positive_weight_edges = [edge for edge in self.graph.graph.edges() if self.graph.get_edge_weight(edge[0], edge[1]) > 0]
+
+        matching_counts = {edge: self.matched_count[edge] for edge in positive_weight_edges}
+
+        matching_probabilities = {edge: self.matched_count[edge] / self.num_rounds for edge in positive_weight_edges}
 
         """ 
         The minimum value of this matching probability across all edges should be at least c times the weight of the edge in the fractional matching.
@@ -93,6 +103,9 @@ class Evaluator:
             "scaled_matching_probabilities": scaled_matching_probabilities,
             "matching_probabilities": matching_probabilities,
             "matching_counts": matching_counts,
+            "average_num_matching_probability_capped": num_matching_probability_capped / self.num_rounds,
+            "average_num_matching_probability_exceeds_one": num_matching_probability_exceeds_one / self.num_rounds,
+            "average_num_proposal_matching_probability_exceeds_one": num_proposal_matching_probability_exceeds_one / self.num_rounds
         }
 
         return result
@@ -131,7 +144,7 @@ def run_experiments(parameters):
 
     if rounding_scheme_class == SIMULATED_ROUNDING_SCHEME_WITH_IS:
         num_sim_instances = parameters.get("num_sim_instances", 10000)
-        evaluator.set_rounding_scheme(SimulatedRecursiveRoundingSchemeWithIS(graph, average_edge_weight=average_edge_weight, c=c_guarantee, num_sim_instances=num_sim_instances, r=r))
+        evaluator.set_rounding_scheme(SimulatedRecursiveRoundingSchemeWithIS(graph, average_edge_weight=average_edge_weight, c=c_guarantee, r=r, num_sim_instances=num_sim_instances))
     elif rounding_scheme_class == SIMULATED_ROUNDING_SCHEME:
         num_sim_instances = parameters.get("num_sim_instances", 10000)
         evaluator.set_rounding_scheme(SimulatedRecursiveRoundingScheme(graph, average_edge_weight=average_edge_weight, c=c_guarantee, r=r, num_sim_instances=num_sim_instances))
