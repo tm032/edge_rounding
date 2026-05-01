@@ -53,14 +53,14 @@ def parse_json_file():
 def plot_results():
     titles = {
         "star": "Star Graph (20 leaves)",
-        "tree": "Tree Graph  (3-ary tree of height 4)",
-        "complete": "Complete Graph (10 nodes)",
-        "bipartite": "Bipartite Graph (10 left nodes, 10 right nodes)"
+        "tree": "Tree Graph  (ternary tree with depth 4)",
+        "complete": "Complete Graph (10 vertices)",
+        "bipartite": "Bipartite Graph (10 left vertices, 10 right vertices)"
     }
 
     rounding_scheme_labels = {
-        "simple": "Simple Rounding",
-        "simulated": "Simulated Rounding (with Crude MC)"
+        "simple": "Trivial Rounding Scheme",
+        "simulated": "Simulation-based Rounding Scheme"
     }
 
     df = pd.read_csv(SUMMARY_RESULTS_DIR + "experiment_1_results.csv")
@@ -69,17 +69,26 @@ def plot_results():
     
     fig, axes = plt.subplots(2, 2, figsize=(10, 8))
     graph_types = df["graph"].unique()
+
+    # Different marker styles for different rounding schemes to improve readability
+    marker_styles = {
+        "Trivial Rounding Scheme": "o",
+        "Simulation-based Rounding Scheme": "s"
+    }
+
     for i, graph_type in enumerate(graph_types):
         ax = axes[i//2, i%2]
         graph_df = df[df["graph"] == graph_type]
         for rounding_scheme in graph_df["rounding_scheme"].unique():
             scheme_df = graph_df[graph_df["rounding_scheme"] == rounding_scheme]
-            ax.plot(scheme_df["c"], scheme_df["worst_case_guarantee"], marker='o', label=rounding_scheme)
+            ax.plot(scheme_df["c"], scheme_df["worst_case_guarantee"], marker=marker_styles.get(rounding_scheme, 'o'), label=rounding_scheme)
             ax.margins(y=0.1)  # Add some vertical margin to prevent overlap of points with x-axis
 
         ax.set_title(f"{titles.get(graph_type, graph_type.capitalize())}")
-        ax.set_xlabel("c")
-        ax.set_ylabel("Worst-case Guarantee")
+        ax.set_xlabel("Target guarantee ($\\tilde{c}$)")
+        ax.set_ylabel("Estimated guarantee ($\\hat{c}$)")
+        ax.set_ylim(0, 1.05)  # Set y-axis limits to [0, 1.05] to ensure all points are visible and prevent overlap with x-axis
+        ax.minorticks_on()  # Enable minor ticks for better granularity
         ax.legend()
         ax.grid(True)
 

@@ -37,8 +37,8 @@ def generate_complete_graphs(seed):
             unbalanced_complete_graph.export_to_json(f"nonuniform_complete_{n}_order_{i}.json")
 
 def generate_bipartite_graphs(seed):
-    num_left_vertices = [10, 20, 40]
-    num_right_vertices = [10, 20, 40]
+    num_left_vertices = [10, 20, 30]
+    num_right_vertices = [10, 20, 30]
     for n in num_left_vertices:
         for m in num_right_vertices:
             balanced_bipartite_graph = BipartiteGraph(num_left_vertices=n, num_right_vertices=m)
@@ -72,7 +72,7 @@ def generate_tree_graphs(seed):
 
 
 if __name__ == "__main__":
-    generate_star_graphs(seed=1)
-    generate_complete_graphs(seed=103)
+    # generate_star_graphs(seed=1)
+    # generate_complete_graphs(seed=103)
     generate_bipartite_graphs(seed=42)
-    generate_tree_graphs(seed=54)
+    # generate_tree_graphs(seed=54)

@@ -82,18 +82,17 @@ def comparing_c_values_experiment(graph_file, rounding_scheme, r=1, num_sim_inst
     return results
 
 def experiment_1():
-    # comparing_c_values_experiment(graph_file=get_star_graph_file(20, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME_FOR_TREE)
-    # comparing_c_values_experiment(graph_file=get_star_graph_file(20, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
+    comparing_c_values_experiment(graph_file=get_star_graph_file(20, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME_FOR_TREE)
+    comparing_c_values_experiment(graph_file=get_star_graph_file(20, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
 
-    # comparing_c_values_experiment(graph_file=get_complete_graph_file(10, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME)
-    # comparing_c_values_experiment(graph_file=get_complete_graph_file(10, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
+    comparing_c_values_experiment(graph_file=get_complete_graph_file(10, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME)
+    comparing_c_values_experiment(graph_file=get_complete_graph_file(10, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
 
-    # comparing_c_values_experiment(graph_file=get_bipartite_graph_file(10, 10, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME)
-    # comparing_c_values_experiment(graph_file=get_bipartite_graph_file(10, 10, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
+    comparing_c_values_experiment(graph_file=get_bipartite_graph_file(10, 10, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME)
+    comparing_c_values_experiment(graph_file=get_bipartite_graph_file(10, 10, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
 
-    # comparing_c_values_experiment(graph_file=get_tree_graph_file(3, 4, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME_FOR_TREE)
-    # comparing_c_values_experiment(graph_file=get_tree_graph_file(3, 4, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
-    pass # Completed experiment 1
+    comparing_c_values_experiment(graph_file=get_tree_graph_file(3, 4, True, order=0), rounding_scheme=SIMPLE_ROUNDING_SCHEME_FOR_TREE)
+    comparing_c_values_experiment(graph_file=get_tree_graph_file(3, 4, True, order=0), rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=1, num_sim_instances=10000)
 
 def experiment_2():
     star_graph_file = get_star_graph_file(20, False, order=0)
@@ -101,10 +100,7 @@ def experiment_2():
     bipartite_graph_file = get_bipartite_graph_file(10, 10, False, order=0)
     tree_graph_file = get_tree_graph_file(3, 4, False, order=0)
 
-    comparing_c_values_experiment(graph_file=tree_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=0.6, num_sim_instances=10000)
-
-
-    for r in [0.4, 0.2, 0.0]:
+    for r in [1.0, 0.8, 0.6, 0.4, 0.2, 0.0]:
         # comparing_c_values_experiment(graph_file=complete_graph_file, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
         # comparing_c_values_experiment(graph_file=complete_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
 
@@ -114,52 +110,48 @@ def experiment_2():
         comparing_c_values_experiment(graph_file=bipartite_graph_file, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
         comparing_c_values_experiment(graph_file=bipartite_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
 
-        comparing_c_values_experiment(graph_file=tree_graph_file, rounding_scheme=SIMPLE_ROUNDING_SCHEME_FOR_TREE, r=r)
-        comparing_c_values_experiment(graph_file=tree_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
+        # comparing_c_values_experiment(graph_file=tree_graph_file, rounding_scheme=SIMPLE_ROUNDING_SCHEME_FOR_TREE, r=r)
+        # comparing_c_values_experiment(graph_file=tree_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
+
+def experiment_3():
+    r = 0.8
+    for o in range(1,5):
+        non_uniform_bipartite_graph_file = get_bipartite_graph_file(10, 10, False, order=o)
+        comparing_c_values_experiment(graph_file=non_uniform_bipartite_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
+        comparing_c_values_experiment(graph_file=non_uniform_bipartite_graph_file, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
+
+        uniform_bipartite_graph_file = get_bipartite_graph_file(10, 10, True, order=o)
+        comparing_c_values_experiment(graph_file=uniform_bipartite_graph_file, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
+        comparing_c_values_experiment(graph_file=uniform_bipartite_graph_file, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
+
+def experiment_4():
+    r = 0.8
+    o = 0
+    n = [30]
+
+    # bipartite_graph = get_bipartite_graph_file(30, 30, True, order=o)
+    # comparing_c_values_experiment(graph_file=bipartite_graph, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
+    
+    bipartite_graph = get_bipartite_graph_file(30, 30, False, order=o)
+    comparing_c_values_experiment(graph_file=bipartite_graph, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r)
+
+    # bipartite_graph = get_bipartite_graph_file(30, 30, True, order=o)
+    # comparing_c_values_experiment(graph_file=bipartite_graph, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
+
+
+    # for num_vertices in n:
+    #     for uniform in [True, False]:
+    #         bipartite_graph = get_bipartite_graph_file(num_vertices, num_vertices, uniform, order=o)
+    #         comparing_c_values_experiment(graph_file=bipartite_graph, rounding_scheme=SIMULATED_ROUNDING_SCHEME, r=r, num_sim_instances=10000)
+    #         comparing_c_values_experiment(graph_file=bipartite_graph, rounding_scheme=SIMPLE_ROUNDING_SCHEME, r=r)
+    
+
 
 if __name__ == "__main__":
-    experiment_2()
-
-    # c = 0.6
-    # r = 0.7
-    # graph_file=get_complete_graph_file(20, False, order=0)
-    # # graph_file = get_star_graph_file(40, False, order=0)
-    # parameters = get_parameter_template_for_graph_file(graph_file, SIMULATED_ROUNDING_SCHEME, c, r, num_sim_instances=100)
-    # result = run_experiments(parameters)
-
-    # parameters = get_parameter_template_for_graph_file(graph_file, SIMULATED_ROUNDING_SCHEME_WITH_IS, c, r, num_sim_instances=100)
-    # result = run_experiments(parameters)
-
-
-
-    # r = 0.7
-    # num_sim_instances = 10000
-    # graph_file = get_star_graph_file(10, True, order=0)
-    # parameters = get_parameter_template_for_graph_file(graph_file, SIMULATED_ROUNDING_SCHEME_WITH_IS, 0.5, r, num_sim_instances)
-    # result = run_experiments(parameters)
-
-    # for v in V:
-    #     for uniform in [True, False]:
-    #         graph_file = get_star_graph_file(v, uniform, order=0)
-    #         comparing_c_values_experiment(graph_file, SIMULATED_ROUNDING_SCHEME_WITH_IS, r=0.7, num_sim_instances=10000)
-    
-    # for v in V:
-    #     for uniform in [True, False]:
-    #         graph_file = get_complete_graph_file(v, uniform, order=0)
-    #         comparing_c_values_experiment(graph_file, SIMULATED_ROUNDING_SCHEME_WITH_IS, r=0.7, num_sim_instances=10000)
-
-    # for n in V:
-    #     for m in U:
-    #         for uniform in [True, False]:
-    #             graph_file = get_bipartite_graph_file(n, m, uniform, order=0)
-    #             comparing_c_values_experiment(graph_file, SIMULATED_ROUNDING_SCHEME_WITH_IS, r=0.7, num_sim_instances=10000)
-
-    # for r in r_tree:
-    #     for h in h_tree:
-    #         for uniform in [True, False]:
-    #             graph_file = get_tree_graph_file(r, h, uniform, order=0)
-    #             comparing_c_values_experiment(graph_file, SIMULATED_ROUNDING_SCHEME_WITH_IS, r=0.7, num_sim_instances=10000)
-
-    
+    # experiment_1() # Completed
+    # experiment_2() # Completed
+    # experiment_3() # Completed
+    # experiment_4() # Completed
+    pass
 
 

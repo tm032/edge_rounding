@@ -37,6 +37,8 @@ class Evaluator:
         num_matching_probability_capped = 0
         num_matching_probability_exceeds_one = 0
         num_proposal_matching_probability_exceeds_one = 0
+
+        weights_list = []
         
         if parallel:
             rounding_scheme_instances = [copy.deepcopy(self.rounding_scheme) for _ in range(self.num_rounds)]
@@ -73,7 +75,8 @@ class Evaluator:
                         f.write(f"{prob},")
                     f.write("\n")
 
-            simulation_weight = result["simulation_weight"]                    
+            simulation_weight = result["simulation_weight"]
+            weights_list.append(simulation_weight)                
             for edge in result['matched_edges']:
                 u, v = edge
                 if edge in self.matched_count:
@@ -98,6 +101,8 @@ class Evaluator:
         """
         scaled_matching_probabilities = {edge: prob / self.graph.get_edge_weight(edge[0], edge[1]) for edge, prob in matching_probabilities.items()}
 
+        effective_sample_size = (sum(weights_list))**2 / sum(w**2 for w in weights_list) if sum(w**2 for w in weights_list) > 0 else 0 
+
         result = {
             "min_scaled_matching_probability": min(scaled_matching_probabilities.values()),
             "scaled_matching_probabilities": scaled_matching_probabilities,
@@ -105,7 +110,9 @@ class Evaluator:
             "matching_counts": matching_counts,
             "average_num_matching_probability_capped": num_matching_probability_capped / self.num_rounds,
             "average_num_matching_probability_exceeds_one": num_matching_probability_exceeds_one / self.num_rounds,
-            "average_num_proposal_matching_probability_exceeds_one": num_proposal_matching_probability_exceeds_one / self.num_rounds
+            "average_num_proposal_matching_probability_exceeds_one": num_proposal_matching_probability_exceeds_one / self.num_rounds,
+            "weights_list": weights_list,
+            "effective_sample_size": effective_sample_size
         }
 
         return result
