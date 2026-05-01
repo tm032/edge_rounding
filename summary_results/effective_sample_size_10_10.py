@@ -27,11 +27,11 @@ def plot_effective_sample_size():
     }
 
     df = pd.read_csv(f"{SUMMARY_RESULTS_DIR}/effective_sample_size_results_bipartite_10_10.csv")
-    fig, ax = plt.subplots(1,2, figsize=(10, 6))
+    fig, ax = plt.subplots(1,2, figsize=(11, 6))
     for r in sorted(df["r"].unique()):
         subset = df[df["rounding_scheme"] == "simulated"]
         ax[1].plot(subset[subset["r"] == r]["c"], subset[subset["r"] == r]["effective_sample_size"], label=f"$\\lambda={r}$", marker=markers.get(r, 'o'))
-    ax[1].set_title("Bipartite Graph - Simulated Rounding Scheme")
+    ax[1].set_title("Bipartite Graph - Simulation-based Rounding Scheme")
     ax[1].set_xlabel("Target guarantee ($\\tilde{c}$)")
     ax[1].set_ylabel("Effective Sample Size")
     ax[1].legend()
@@ -52,5 +52,5 @@ def plot_effective_sample_size():
     plt.show()
 
 if __name__ == "__main__":
-    parse_json_files()
+    # parse_json_files()
     plot_effective_sample_size()
